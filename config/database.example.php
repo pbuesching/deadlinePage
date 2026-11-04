@@ -1,4 +1,5 @@
 <?php
+// MariaDB-Verbindung (PHP-Erweiterung pdo_mysql).
 // Kopiere diese Datei als database.php und trage deine Datenbankdaten ein.
 // Diese Datei muss außerhalb des öffentlich erreichbaren Webverzeichnisses bleiben.
 return [

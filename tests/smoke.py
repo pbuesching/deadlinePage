@@ -1,4 +1,4 @@
-"""Integrationstest gegen den laufenden PHP/MySQL-Stack; räumt Testdaten auf."""
+"""Integrationstest gegen den laufenden PHP/MariaDB-Stack; räumt Testdaten auf."""
 import http.cookiejar
 import os
 import re

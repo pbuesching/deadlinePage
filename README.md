@@ -1,17 +1,17 @@
 # Deadline
 
-Eine deutschsprachige To-do-Website für einen bestehenden PHP/MySQL-Webserver. Kein Docker, Composer, Node.js oder Framework erforderlich.
+Eine deutschsprachige To-do-Website für einen bestehenden PHP/MariaDB-Webserver. Kein Docker, Composer, Node.js oder Framework erforderlich.
 
 ## Auf deinem Server einrichten
 
-Voraussetzungen: PHP **8.2 oder neuer** mit `PDO`, `pdo_mysql` und aktivierten Sessions sowie MySQL **8.0 oder neuer**. Der Webserver muss PHP ausführen können, beispielsweise Apache mit PHP oder Nginx mit PHP-FPM.
+Voraussetzungen: PHP **8.2 oder neuer** mit `PDO`, `pdo_mysql` und aktivierten Sessions sowie MariaDB **10.11 oder neuer**. Der Webserver muss PHP ausführen können, beispielsweise Apache mit PHP oder Nginx mit PHP-FPM.
 
 1. Projekt auf deinen Server kopieren oder mit Git auschecken.
 2. In deinem Hosting-Panel eine Datenbank und einen Datenbankbenutzer anlegen. Der Benutzer benötigt für diese Datenbank SELECT, INSERT, UPDATE und DELETE; für den einmaligen Schemaimport zusätzlich CREATE und INDEX.
 3. `database/schema.sql` in diese Datenbank importieren, etwa über phpMyAdmin (Datenbank auswählen → Importieren) oder die Kommandozeile:
 
    ```sh
-   mysql -h 127.0.0.1 -u DEIN_BENUTZER -p DEINE_DATENBANK < database/schema.sql
+   mariadb -h 127.0.0.1 -u DEIN_BENUTZER -p DEINE_DATENBANK < database/schema.sql
    ```
 
    Der Import legt die Tabelle `todos` an und löscht keine bestehenden Einträge. Beim Import vorhandene gleichnamige Tabellen werden nicht aktualisiert.
@@ -41,6 +41,12 @@ Voraussetzungen: PHP **8.2 oder neuer** mit `PDO`, `pdo_mysql` und aktivierten S
 6. Stelle sicher, dass der PHP-Prozess die Projektdateien und `config/database.php` lesen kann und sein Sessionverzeichnis beschreibbar ist. Das Projektverzeichnis selbst benötigt keine Schreibrechte für PHP. Die Konfigurationsdatei nur für die notwendigen Serverbenutzer lesbar machen.
 7. Domain öffnen und das erste To-do anlegen. Bei Fehlern das PHP-Fehlerprotokoll des Servers prüfen; Zugangsdaten werden nicht auf der Website angezeigt. PHP-Fehlerausgabe (`display_errors`) auf einem öffentlich erreichbaren Server deaktivieren.
 
+## MariaDB-Anbindung
+
+PHP verbindet sich auch mit MariaDB über die Erweiterung `pdo_mysql` und einen `mysql:`-DSN. Das ist der korrekte Treibername; ein `mariadb:`-DSN wird von PDO nicht unterstützt. Host, Port und Zugangsdaten stehen weiterhin in `config/database.php`.
+
+Das Schema verwendet InnoDB und `utf8mb4_unicode_ci`, die MariaDB direkt unterstützt. Bei einer neuen MariaDB-Datenbank genügt der Schemaimport. Bestehende Aufgaben aus einer anderen Datenbank werden dadurch nicht übertragen: zuerst die Tabelle `todos` samt Daten exportieren und in MariaDB importieren, anschließend die lokale Konfiguration auf MariaDB umstellen. Eine bestehende `todos`-Tabelle wird durch den Schemaimport nicht gelöscht oder verändert.
+
 ## Funktionen
 
 - To-dos mit Titel, Notizen und frei wählbarer Farbe anlegen und bearbeiten.
@@ -51,7 +57,7 @@ Voraussetzungen: PHP **8.2 oder neuer** mit `PDO`, `pdo_mysql` und aktivierten S
 
 ## Lokal entwickeln und prüfen
 
-Mit lokal installiertem PHP und erreichbarer MySQL-Datenbank nach der obigen Einrichtung aus dem Projektverzeichnis starten:
+Mit lokal installiertem PHP und erreichbarer MariaDB-Datenbank nach der obigen Einrichtung aus dem Projektverzeichnis starten:
 
 ```sh
 php -S 127.0.0.1:8080 -t public

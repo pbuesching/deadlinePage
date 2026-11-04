@@ -32,6 +32,7 @@ function db(): PDO {
     if ($port === false) {
         throw new RuntimeException('Der Datenbankport ist ungültig.');
     }
+    // MariaDB verwendet in PHP den PDO-MySQL-Treiber und dessen mysql:-DSN.
     $dsn = 'mysql:host=' . $config['host'] . ';port=' . $port . ';dbname=' . $config['database'] . ';charset=utf8mb4';
     return $pdo = new PDO($dsn, $config['username'], $config['password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
