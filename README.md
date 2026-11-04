@@ -1,27 +1,45 @@
 # Deadline
 
-Eine deutschsprachige To-do-Website mit PHP 8.4 und MySQL 8.4. Ohne Framework, Composer oder externe Frontend-Abhängigkeiten.
+Eine deutschsprachige To-do-Website für einen bestehenden PHP/MySQL-Webserver. Kein Docker, Composer, Node.js oder Framework erforderlich.
 
-## Starten
+## Auf deinem Server einrichten
 
-Voraussetzungen: Docker mit Compose. Im Repository:
+Voraussetzungen: PHP **8.2 oder neuer** mit `PDO`, `pdo_mysql` und aktivierten Sessions sowie MySQL **8.0 oder neuer**. Der Webserver muss PHP ausführen können, beispielsweise Apache mit PHP oder Nginx mit PHP-FPM.
 
-```sh
-cp .env.example .env
-# In .env zwei unterschiedliche, zufällige Passwörter eintragen.
-docker compose up -d --build
-```
+1. Projekt auf deinen Server kopieren oder mit Git auschecken.
+2. In deinem Hosting-Panel eine Datenbank und einen Datenbankbenutzer anlegen. Der Benutzer benötigt für diese Datenbank SELECT, INSERT, UPDATE und DELETE; für den einmaligen Schemaimport zusätzlich CREATE und INDEX.
+3. `database/schema.sql` in diese Datenbank importieren, etwa über phpMyAdmin (Datenbank auswählen → Importieren) oder die Kommandozeile:
 
-Die Anwendung läuft auf Port 8080, gebunden an die lokale Schnittstelle. MySQL ist ausschließlich im internen Compose-Netz erreichbar. Beim ersten Start wird das Schema automatisch angelegt. Daten bleiben im benannten Volume `mysql_data` erhalten.
+   ```sh
+   mysql -h 127.0.0.1 -u DEIN_BENUTZER -p DEINE_DATENBANK < database/schema.sql
+   ```
 
-```sh
-docker compose ps
-docker compose exec -T web php -l public/index.php
-python3 tests/smoke.py
-docker compose down
-```
+   Der Import legt die Tabelle `todos` an und löscht keine bestehenden Einträge. Beim Import vorhandene gleichnamige Tabellen werden nicht aktualisiert.
 
-`docker compose down` erhält die Daten. `docker compose down -v` löscht sie unwiderruflich.
+4. Die Beispielkonfiguration kopieren:
+
+   ```sh
+   cp config/database.example.php config/database.php
+   ```
+
+   In **`config/database.php`** Host, Port, Datenbankname, Benutzer und Passwort eintragen:
+
+   ```php
+   <?php
+   return [
+       'host' => '127.0.0.1',
+       'port' => 3306,
+       'database' => 'DEINE_DATENBANK',
+       'username' => 'DEIN_BENUTZER',
+       'password' => 'DEIN_PASSWORT',
+   ];
+   ```
+
+   Bei Passwörtern mit einfachen Anführungszeichen oder Backslashes müssen diese im PHP-String mit einem Backslash maskiert werden. Die Datei ist in Git ausgeschlossen und bleibt bei einem normalen `git pull` erhalten. Keine echten Zugangsdaten in die Beispielkonfiguration schreiben. Eine `.env` wird nicht benötigt und nicht eingelesen.
+
+5. Das **DocumentRoot deiner Domain oder Subdomain auf `public/`** setzen, beispielsweise `/var/www/deadlinePage/public`. `config/`, `src/` und `database/` bleiben außerhalb des Webverzeichnisses. Nicht das gesamte Projekt in ein öffentliches Verzeichnis legen. Unterstützt dein Hosting kein frei wählbares DocumentRoot, kopiere nur den Inhalt von `public/` in das Webverzeichnis und lege `src/` und `config/` als dessen Nachbarverzeichnisse eine Ebene darüber ab. Der relative Pfad aus `public/index.php` zu `../src/bootstrap.php` muss dabei erhalten bleiben. Die Anwendung erwartet die URL-Wurzel einer Domain/Subdomain, keinen Unterordner.
+6. Stelle sicher, dass der PHP-Prozess die Projektdateien und `config/database.php` lesen kann und sein Sessionverzeichnis beschreibbar ist. Das Projektverzeichnis selbst benötigt keine Schreibrechte für PHP. Die Konfigurationsdatei nur für die notwendigen Serverbenutzer lesbar machen.
+7. Domain öffnen und das erste To-do anlegen. Bei Fehlern das PHP-Fehlerprotokoll des Servers prüfen; Zugangsdaten werden nicht auf der Website angezeigt. PHP-Fehlerausgabe (`display_errors`) auf einem öffentlich erreichbaren Server deaktivieren.
 
 ## Funktionen
 
@@ -31,10 +49,27 @@ docker compose down
 - Als erledigt markieren, wieder öffnen, löschen, nach Titel suchen sowie offene/erledigte Aufgaben filtern.
 - Termine werden in `Europe/Vienna` eingegeben und gespeichert; Browser erhalten explizite Zeitstempel zur Restzeitberechnung.
 
-## Entwicklung und Betrieb
+## Lokal entwickeln und prüfen
 
-Der Quellcode wird im Entwicklungscontainer eingebunden; Änderungen sind direkt sichtbar. Web-Einstiegspunkt ist ausschließlich `public/`. Die Datenbankverbindung verwendet `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (siehe Compose). Keine Zugangsdaten committen.
+Mit lokal installiertem PHP und erreichbarer MySQL-Datenbank nach der obigen Einrichtung aus dem Projektverzeichnis starten:
 
-Die erste Version ist ein gemeinsamer Arbeitsbereich ohne Benutzerkonten. Nur lokal bzw. in einem vertrauenswürdigen Netz betreiben. Vor öffentlicher Bereitstellung sind Anmeldung, Zugriffsschutz, HTTPS und Backups einzurichten. POST-Aktionen haben CSRF-Schutz, Datenbankabfragen verwenden Prepared Statements, Ausgaben werden HTML-escaped.
+```sh
+php -S 127.0.0.1:8080 -t public
+```
 
-Der Integrationstest erzeugt einen eindeutig benannten Testeintrag, prüft CRUD, Terminvalidierung, Farben, HTML-Escaping und CSRF-Schutz und löscht ihn wieder. Er benötigt den laufenden Stack und Python 3. Browser-Interaktionen lassen sich zusätzlich manuell mit dem Dialog und den Filtern prüfen.
+Der eingebaute PHP-Server dient nur zur Entwicklung. Für den normalen Betrieb den bestehenden Webserver verwenden.
+
+```sh
+php -l config/database.php
+php -l src/bootstrap.php
+php -l public/index.php
+python3 tests/smoke.py
+```
+
+Der optionale Integrationstest benötigt Python 3 und eine laufende Anwendung. Er erzeugt einen eindeutig benannten Testeintrag, prüft CRUD, Terminvalidierung, Farben, HTML-Escaping und CSRF-Schutz und löscht ihn wieder. Für einen anderen lokalen Testserver kann `TEST_BASE_URL` gesetzt werden, zum Beispiel `TEST_BASE_URL=http://127.0.0.1:8000 python3 tests/smoke.py`. Nicht gegen fremde oder produktive Instanzen testen.
+
+## Betrieb
+
+Die erste Version ist ein gemeinsamer Arbeitsbereich ohne Benutzerkonten. Nur lokal bzw. in einem vertrauenswürdigen Netz betreiben oder den Zugriff über den Webserver beschränken. Vor öffentlicher Bereitstellung sind Anmeldung/Zugriffsschutz, HTTPS und Datenbankbackups einzurichten. POST-Aktionen haben CSRF-Schutz, Datenbankabfragen verwenden Prepared Statements, Ausgaben werden HTML-escaped.
+
+Ein Update ersetzt keine Datenbankdaten. `config/database.php` und die Datenbank unabhängig vom Git-Repository sichern. Die früheren Docker-Dateien wurden entfernt; vorhandene Docker-Datenvolumes werden dadurch nicht gelöscht. Bei einem Umzug von der früheren Docker-Installation zuerst die bestehende Datenbank exportieren und auf dem Server importieren.

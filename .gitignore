@@ -1,1 +1,3 @@
+/config/database.php
 .env
+__pycache__/

@@ -1,12 +1,13 @@
 """Integrationstest gegen den laufenden PHP/MySQL-Stack; räumt Testdaten auf."""
 import http.cookiejar
+import os
 import re
 import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
 
-base = 'http://127.0.0.1:8080/'
+base = os.environ.get('TEST_BASE_URL', 'http://127.0.0.1:8080/').rstrip('/') + '/'
 client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
 def get():

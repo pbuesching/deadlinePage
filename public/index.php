@@ -41,11 +41,11 @@ try {
         }
     }
     $todos = $pdo->query('SELECT * FROM todos ORDER BY completed_at IS NOT NULL, due_at, id DESC')->fetchAll();
-} catch (PDOException $ex) {
+} catch (RuntimeException $ex) {
     error_log($ex->getMessage());
     http_response_code(503);
     $connectionError = true;
-    $error = 'Die Datenbank ist gerade nicht erreichbar. Bitte versuche es gleich erneut.';
+    $error = 'Die Datenbank ist gerade nicht verfügbar. Bitte prüfe die Einrichtung oder versuche es später erneut.';
     $todos = [];
 }
 $now = new DateTimeImmutable();
